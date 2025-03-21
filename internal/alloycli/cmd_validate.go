@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/grafana/alloy/internal/featuregate"
-	alloy_runtime "github.com/grafana/alloy/internal/runtime"
+	"github.com/grafana/alloy/internal/runtime"
 	"github.com/grafana/alloy/internal/runtime/logging"
 	"github.com/grafana/alloy/internal/runtime/tracing"
 	"github.com/grafana/alloy/internal/service"
@@ -106,7 +106,7 @@ func validateFile(path string, formatIfValid bool) error {
 	}
 
 	// Parse the file to validate basic syntax
-	source, err := alloy_runtime.ParseSource(path, content)
+	source, err := runtime.ParseSource(path, content)
 	if err != nil {
 		var diags diag.Diagnostics
 		if errors.As(err, &diags) {
@@ -137,7 +137,7 @@ func validateFile(path string, formatIfValid bool) error {
 	otelService := otel_service.New(logger)
 
 	// Create a controller with the same settings as the run command
-	controller := alloy_runtime.New(alloy_runtime.Options{
+	controller := runtime.New(runtime.Options{
 		Logger:       logger,
 		Tracer:       tracer,
 		MinStability: featuregate.StabilityGenerallyAvailable,

@@ -7,7 +7,7 @@ import (
 
 	"github.com/fatih/color"
 
-	runtime "github.com/grafana/alloy/internal/runtime"
+	"github.com/grafana/alloy/internal/runtime"
 	"github.com/grafana/alloy/syntax/diag"
 )
 

@@ -9,7 +9,7 @@ import (
 	"reflect"
 
 	"github.com/fatih/color"
-	runtime "github.com/grafana/alloy/internal/runtime"
+	"github.com/grafana/alloy/internal/runtime"
 	"github.com/grafana/alloy/syntax/diag"
 	"github.com/grafana/alloy/syntax/parser"
 	"github.com/grafana/alloy/syntax/printer"
