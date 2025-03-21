@@ -8,11 +8,12 @@ import (
 	"os"
 	"reflect"
 
-	"github.com/spf13/cobra"
-
+	"github.com/fatih/color"
+	runtime "github.com/grafana/alloy/internal/runtime"
 	"github.com/grafana/alloy/syntax/diag"
 	"github.com/grafana/alloy/syntax/parser"
 	"github.com/grafana/alloy/syntax/printer"
+	"github.com/spf13/cobra"
 )
 
 func fmtCommand() *cobra.Command {
@@ -52,18 +53,64 @@ The -w flag can be used to write the formatted file back to disk. -w can not be 
 				return fmt.Errorf("encountered errors during formatting")
 			}
 
+			if f.validate {
+				// Validate configuration without modifying it
+				filename := "-"
+				if len(args) > 0 {
+					filename = args[0]
+				}
+
+				// Read the file content
+				var content []byte
+				if filename == "-" {
+					content, err = io.ReadAll(os.Stdin)
+					if err != nil {
+						return fmt.Errorf("error reading from stdin: %w", err)
+					}
+				} else {
+					content, err = os.ReadFile(filename)
+					if err != nil {
+						return fmt.Errorf("error reading %s: %w", filename, err)
+					}
+				}
+
+				// Create a map with just the file being validated
+				contents := map[string][]byte{filename: content}
+
+				for file, content := range contents {
+					// Use the same loading mechanism as in cmd_run.go, but don't run the configuration
+					_, err := runtime.ParseSource(file, content)
+					if err != nil {
+						var diags diag.Diagnostics
+						if errors.As(err, &diags) {
+							p := diag.NewPrinter(diag.PrinterConfig{
+								Color:              !color.NoColor,
+								ContextLinesBefore: 1,
+								ContextLinesAfter:  1,
+							})
+							_ = p.Fprint(os.Stderr, map[string][]byte{file: content}, diags)
+							return fmt.Errorf("validation failed for %s", file)
+						}
+						return fmt.Errorf("error validating %s: %w", file, err)
+					}
+				}
+				fmt.Println("Configuration validation successful!")
+				return nil
+			}
 			return err
 		},
 	}
 
 	cmd.Flags().BoolVarP(&f.write, "write", "w", f.write, "write result to (source) file instead of stdout")
 	cmd.Flags().BoolVarP(&f.test, "test", "t", f.test, "exit with non-zero when changes would be made. Cannot be used with -w/--write")
+	cmd.Flags().BoolVar(&f.validate, "validate", false, "Validate configuration without formatting")
 	return cmd
 }
 
 type alloyFmt struct {
-	write bool
-	test  bool
+	write    bool
+	test     bool
+	validate bool
 }
 
 func (ff *alloyFmt) Run(configFile string) error {
